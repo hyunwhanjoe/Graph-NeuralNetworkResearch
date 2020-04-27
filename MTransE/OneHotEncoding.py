@@ -3,7 +3,7 @@ from numpy import linalg as LA
 
 index = {}
 i = 0
-path = "C:/Users/hyunwhanjoe/Downloads/MTransE data/CN3l/en_de/"
+path = "data/CN3l/en_de/"
 with open(path + "test.csv", "r") as file:
     for line in file:
         line = line.rstrip()
