@@ -12,23 +12,23 @@ class ConvolutionalNeuralNetwork(tf.keras.layers.Layer):
         super(ConvolutionalNeuralNetwork, self).__init__()
         # self.cnn = None
         self.flat = None
-        self.dense = None
         self.dense1 = None
+        self.dense2 = None
 
-    def build(self, input_shape):
+    def build(self, input_shape):  # input_shape not used
         # self.cnn = tf.keras.layers.Conv2D(input_shape=input_shape,
         #                                  filters=12, kernel_size=[3, 3],
         #                                  padding="same",
         #                                  activation="relu")
         self.flat = tf.keras.layers.Flatten()  # flattens input
         self.dense1 = tf.keras.layers.Dense(1024, activation="relu")
-        self.dense = tf.keras.layers.Dense(10)  # since Mnist has 10 classes
+        self.dense2 = tf.keras.layers.Dense(10)  # since Mnist has 10 classes
 
     def call(self, inputs, **kwargs):
         # [batch, 28, 28, 1]
         inputs = self.flat(tf.squeeze(inputs, -1))
 
-        return self.dense(self.dense1(inputs))
+        return self.dense2(self.dense1(inputs))
 
 
 def main():
