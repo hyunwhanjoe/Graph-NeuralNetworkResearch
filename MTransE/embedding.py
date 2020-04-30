@@ -6,9 +6,7 @@ def index(int_index, item, number):
     if not int_index.get(item):
         int_index[item] = number
         number += 1
-        return number
-    else:
-        return number
+    return number
 
 
 indexDict = {}
