@@ -29,9 +29,9 @@ def one_hot_encode(path):
             i = index(indexes, triple[2], i)
             line_num += 1
         index_max = len(indexes)
-        heads = np.zeros((line_num, index_max))
-        relations = np.zeros((line_num, index_max))
-        tails = np.zeros((line_num, index_max))
+        heads = np.zeros((line_num, 1, index_max))
+        # relations = np.zeros((line_num, index_max, 1))
+        # tails = np.zeros((line_num, index_max, 1))
         current_line = 0
         file.seek(0)
         for line in file:
@@ -39,13 +39,13 @@ def one_hot_encode(path):
             triple = line.split(",")
 
             one_hot = indexes.get(triple[0])
-            heads[current_line, one_hot] = 1
+            heads[current_line, 0, one_hot] = 1
 
-            one_hot = indexes.get(triple[1])
-            relations[current_line, one_hot] = 1
-
-            one_hot = indexes.get(triple[2])
-            tails[current_line, one_hot] = 1
+            # one_hot = indexes.get(triple[1])
+            # relations[current_line, one_hot] = 1
+            #
+            # one_hot = indexes.get(triple[2])
+            # tails[current_line, one_hot] = 1
 
             current_line += 1
         # print(heads)
@@ -53,15 +53,16 @@ def one_hot_encode(path):
         # print(tails)
         # print(entity_index)
         # print(relation_index)
-        return heads, relations, tails
+        return heads
 
 
 # test = "data/WK3l-15k/en_fr/test.csv"
-# ds_train = tf.data.Dataset.from_tensor_slices(one_hot_encode(test))
-# for elem in ds_train:
-#     print(elem)
-# file.seek(0)
+# dataset = tf.data.Dataset.from_tensor_slices(one_hot_encode(test))
+# for data in dataset.take(1):
+#     print(data)
 
+
+# file.seek(0)
 # np.random.seed(1)
 # embedding = np.random.random((len(index), len(index)))
 # for line in file:
