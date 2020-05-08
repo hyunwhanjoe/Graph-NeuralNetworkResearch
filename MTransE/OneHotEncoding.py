@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 
 """This function takes as input a triple csv file
    and returns a 3-tuple of numpy arrays representing
@@ -41,23 +42,26 @@ def one_hot_encode(path):
 
             one_hot = entity_index.get(triple[0])
             heads[current_line, one_hot] = 1
+
             one_hot = relation_index.get(triple[1])
             relations[current_line, one_hot] = 1
+
             one_hot = entity_index.get(triple[2])
             tails[current_line, one_hot] = 1
 
             current_line += 1
-            return heads, relations, tails
         # print(heads)
         # print(relations)
         # print(tails)
         # print(entity_index)
         # print(relation_index)
+        return heads, relations, tails
 
 
 test = "data/WK3l-15k/en_fr/test.csv"
-one_hot_encode(test)
-
+ds_train = tf.data.Dataset.from_tensor_slices(one_hot_encode(test))
+for elem in ds_train:
+    print(elem)
 # file.seek(0)
 
 # np.random.seed(1)
