@@ -18,35 +18,33 @@ def one_hot_encode(path):
         return number
 
     with open(path, "r") as file:
-        entity_index = {}
-        relation_index = {}
-        entity_i = 0
-        relation_i = 0
+        indexes = {}
+        i = 0
         line_num = 0
         for line in file:
             line = line.rstrip()
             triple = line.split(",")
-            entity_i = index(entity_index, triple[0], entity_i)
-            relation_i = index(relation_index, triple[1], relation_i)
-            entity_i = index(entity_index, triple[2], entity_i)
+            i = index(indexes, triple[0], i)
+            i = index(indexes, triple[1], i)
+            i = index(indexes, triple[2], i)
             line_num += 1
-
-        heads = np.zeros((line_num, len(entity_index)))
-        relations = np.zeros((line_num, len(relation_index)))
-        tails = np.zeros((line_num, len(entity_index)))
+        index_max = len(indexes)
+        heads = np.zeros((line_num, index_max))
+        relations = np.zeros((line_num, index_max))
+        tails = np.zeros((line_num, index_max))
         current_line = 0
         file.seek(0)
         for line in file:
             line = line.rstrip()
             triple = line.split(",")
 
-            one_hot = entity_index.get(triple[0])
+            one_hot = indexes.get(triple[0])
             heads[current_line, one_hot] = 1
 
-            one_hot = relation_index.get(triple[1])
+            one_hot = indexes.get(triple[1])
             relations[current_line, one_hot] = 1
 
-            one_hot = entity_index.get(triple[2])
+            one_hot = indexes.get(triple[2])
             tails[current_line, one_hot] = 1
 
             current_line += 1
@@ -58,10 +56,10 @@ def one_hot_encode(path):
         return heads, relations, tails
 
 
-test = "data/WK3l-15k/en_fr/test.csv"
-ds_train = tf.data.Dataset.from_tensor_slices(one_hot_encode(test))
-for elem in ds_train:
-    print(elem)
+# test = "data/WK3l-15k/en_fr/test.csv"
+# ds_train = tf.data.Dataset.from_tensor_slices(one_hot_encode(test))
+# for elem in ds_train:
+#     print(elem)
 # file.seek(0)
 
 # np.random.seed(1)
