@@ -1,14 +1,16 @@
 """
 TransE testing
-https://github.com/muhaochen/MTransE/blob/master/run/en_de/test_MMTransE_lan_mapping_15k_fk.py
-https://github.com/muhaochen/MTransE/blob/master/src/TransE/TransE.py
 """
 import sys
+import time
 import numpy as np
-# sys.path.insert(0,'../../src/TransE')
+
+sys.path.insert(0, '../../src/TransE')
+print(sys.path)
 
 from TransE import TransE
 
+start_time = time.time()
 fmodel = "transe_test.bin"
 model = TransE()
 model.load(fmodel)
@@ -21,7 +23,7 @@ def seem_hit(x, y):
     return False
 
 
-fmap = "../../data/WK3l-15k/en_de/P_en_v6-test.csv"
+fmap = "../../data/WK3l-15k/en_de/P_en_v6_test.csv"
 topK = 10
 past_num = 0
 score = []
@@ -34,8 +36,8 @@ for line in open(fmap):
     r = model.relation_vec(line[1])
     cand = model.kNN_entity(h + r)  # t - h
     cand = [x[0] for x in cand]
-    print line[0], line[1], line[2]
-    print cand
+    print(past_num, line[0], line[1], line[2])
+    print(cand)
 
     tmp_score = np.zeros(topK)
     hit = False
@@ -59,11 +61,11 @@ for line in open(fmap):
 
     if len(score) == 0:
         score.append(tmp_score)
-        print score
     else:
         score[0] = (score[0] * past_num + tmp_score) / (past_num + 1.0)
-        print score
+    print(score)
     past_num += 1
 
 # sys.path.remove('')
 # print sys.path
+print(time.time() - start_time)
