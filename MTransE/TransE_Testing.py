@@ -34,6 +34,9 @@ for line in open(fmap):
         continue
     h = model.entity_vec(line[0])
     r = model.relation_vec(line[1])
+    if h is None or r is None:
+        print("Is not in training set", line[0], line[1])
+        continue
     cand = model.kNN_entity(h + r)  # t - h
     cand = [x[0] for x in cand]
     print(past_num, line[0], line[1], line[2])
