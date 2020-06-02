@@ -30,8 +30,8 @@ def one_hot_encode(path):
             line_num += 1
         index_max = len(indexes)
         heads = np.zeros((line_num, 1, index_max))
-        # relations = np.zeros((line_num, index_max, 1))
-        # tails = np.zeros((line_num, index_max, 1))
+        relations = np.zeros((line_num, 1, index_max))
+        tails = np.zeros((line_num, 1, index_max))
         current_line = 0
         file.seek(0)
         for line in file:
@@ -41,11 +41,11 @@ def one_hot_encode(path):
             one_hot = indexes.get(triple[0])
             heads[current_line, 0, one_hot] = 1
 
-            # one_hot = indexes.get(triple[1])
-            # relations[current_line, one_hot] = 1
-            #
-            # one_hot = indexes.get(triple[2])
-            # tails[current_line, one_hot] = 1
+            one_hot = indexes.get(triple[1])
+            relations[current_line, 0, one_hot] = 1
+
+            one_hot = indexes.get(triple[2])
+            tails[current_line, 0, one_hot] = 1
 
             current_line += 1
         # print(heads)
@@ -53,12 +53,12 @@ def one_hot_encode(path):
         # print(tails)
         # print(entity_index)
         # print(relation_index)
-        return heads
+        return heads, relations, tails
 
 
 # test = "data/WK3l-15k/en_fr/test.csv"
 # dataset = tf.data.Dataset.from_tensor_slices(one_hot_encode(test))
-# for data in dataset.take(1):
+# for data in dataset:
 #     print(data)
 
 

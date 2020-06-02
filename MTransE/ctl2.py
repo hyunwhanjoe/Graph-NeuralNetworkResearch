@@ -6,11 +6,13 @@ from tensorflow.keras import Model
 # load and prepare MNIST dataset
 mnist = tf.keras.datasets.mnist
 
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-x_train, x_test = x_train / 255.0, x_test / 255.0  # ?
+(x_train, y_train), (x_test, y_test) = mnist.load_data() # tuple of numpy strings
+# x_train.shape (60000, 28, 28)
+# why separate between x and y groups?
+x_train, x_test = x_train / 255.0, x_test / 255.0  # make values between 0 and 1
 
 # Add a channels dimension
-x_train = x_train[..., tf.newaxis]  # [..., None]
+x_train = x_train[..., tf.newaxis]  # (60000, 28, 28, 1)
 x_test = x_test[..., tf.newaxis]
 
 # Use tf.data to batch and shuffle the dataset
@@ -21,14 +23,15 @@ test_ds = tf.data.Dataset.from_tensor_slices((x_test, y_test)).batch(32)
 
 
 # build the tf.keras model using the Keras model subclassing API
-class MyModel(Model):
+class MyModel(Model):  # Model vs Layer
     def __init__(self):
         super(MyModel, self).__init__()
-        self.conv1 = Conv2D(32, 3, activation='relu')
+        self.conv1 = Conv2D(32, 3, activation='relu') # 32 filters, 3x3
         self.flatten = Flatten()
         self.d1 = Dense(128, activation='relu')
-        self.d2 = Dense(10)
+        self.d2 = Dense(10)  # no activation?
 
+# the forward pass
     def call(self, x):
         x = self.conv1(x)
         x = self.flatten(x)

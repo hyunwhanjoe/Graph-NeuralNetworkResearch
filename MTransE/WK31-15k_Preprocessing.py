@@ -8,7 +8,10 @@ for line in original:
     triple = line.split("@@@")
     h = triple[0].replace(" ", "_")  # (_)
     r = triple[1].replace(" ", "_")
-    t = triple[2].replace(" ", "_")  # \ - literals
+    t = triple[2]
+    if t == "":
+        continue
+    t = t.replace(" ", "_")  # \ - literals
     edit.write(h+" r/"+r+" "+t+"\n")  # relation prefix r/poles
 
 original.close()

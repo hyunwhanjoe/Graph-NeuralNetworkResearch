@@ -37,7 +37,7 @@ def main():
         loss_state.update_state(loss)
 
     for epoch in range(1, 20):
-        epoch_loss_avg = tf.keras.metrics.Mean()  # sum
+        epoch_loss_avg = tf.keras.metrics.Sum()
         for datum in iter(ds_train):
             train(datum, epoch_loss_avg)
         print("Epoch %d loss %.3f" % (epoch, epoch_loss_avg.result()))

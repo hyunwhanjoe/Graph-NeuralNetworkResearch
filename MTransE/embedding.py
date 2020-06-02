@@ -23,7 +23,7 @@ with open(path + "test.csv", "r") as file:
 
     file.seek(0)
     vocabSize = len(indexDict)
-    embedding_layer = layers.Embedding(vocabSize, 50)
+    embedding_layer = layers.Embedding(vocabSize, 5)
     for line in file:
         line = line.rstrip()
         triple = line.split("@@@")
@@ -31,3 +31,5 @@ with open(path + "test.csv", "r") as file:
         r = embedding_layer(indexDict[triple[1]])
         t = embedding_layer(indexDict[triple[2]])
         print(tf.norm(h + r - t))
+        # result = embedding_layer(tf.constant([indexDict[triple[0]], indexDict[triple[1]], indexDict[triple[2]]]))
+        # print(tf.norm(result[0] + result[1] - result[2]))
