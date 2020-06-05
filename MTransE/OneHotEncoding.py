@@ -18,33 +18,37 @@ def one_hot_encode(path):
         return number
 
     with open(path, "r") as file:
-        indexes = {}
-        i = 0
+        entity_index = {}
+        relation_index = {}
+        entity_count = 0
+        relation_count = 0
         line_num = 0
         for line in file:
             line = line.rstrip()
-            triple = line.split(",")
-            i = index(indexes, triple[0], i)
-            i = index(indexes, triple[1], i)
-            i = index(indexes, triple[2], i)
+            triple = line.split("@@@")
+            entity_count = index(entity_index, triple[0], entity_count)
+            relation_count = index(relation_index, triple[1], relation_count)
+            entity_count = index(entity_index, triple[2], entity_count)
             line_num += 1
-        index_max = len(indexes)
+
+        index_max = len(entity_index)  # match entity and relation dimensions
         heads = np.zeros((line_num, 1, index_max))
         relations = np.zeros((line_num, 1, index_max))
         tails = np.zeros((line_num, 1, index_max))
         current_line = 0
         file.seek(0)
+
         for line in file:
             line = line.rstrip()
-            triple = line.split(",")
+            triple = line.split("@@@")
 
-            one_hot = indexes.get(triple[0])
+            one_hot = entity_index.get(triple[0])
             heads[current_line, 0, one_hot] = 1
 
-            one_hot = indexes.get(triple[1])
+            one_hot = relation_index.get(triple[1])
             relations[current_line, 0, one_hot] = 1
 
-            one_hot = indexes.get(triple[2])
+            one_hot = entity_index.get(triple[2])
             tails[current_line, 0, one_hot] = 1
 
             current_line += 1
@@ -56,29 +60,7 @@ def one_hot_encode(path):
         return heads, relations, tails
 
 
-# test = "data/WK3l-15k/en_fr/test.csv"
-# dataset = tf.data.Dataset.from_tensor_slices(one_hot_encode(test))
-# for data in dataset:
-#     print(data)
-
-
-# file.seek(0)
-# np.random.seed(1)
-# embedding = np.random.random((len(index), len(index)))
-# for line in file:
-#     line = line.rstrip()
-#     triple = line.split("@@@")
-#
-#     h_onehot = np.zeros(len(index))
-#     h_onehot[index.get(triple[0])] = 1
-#
-#     r_onehot = np.zeros(len(index))
-#     r_onehot[index.get(triple[1])] = 1
-#
-#     t_onehot = np.zeros(len(index))
-#     t_onehot[index.get(triple[2])] = 1
-#
-#     h = embedding.dot(h_onehot)
-#     r = embedding.dot(r_onehot)
-#     t = embedding.dot(t_onehot)
-#     norm = LA.norm(h + r - t)
+test = "data/WK3l-15k/en_de/test.csv"
+dataset = tf.data.Dataset.from_tensor_slices(one_hot_encode(test))
+for data in dataset:
+    print(data)
