@@ -17,7 +17,7 @@ def one_hot_encode(path):
             number += 1
         return number
 
-    with open(path, "r") as file:
+    with open(path, "r", encoding="utf8") as file:
         entity_index = {}
         relation_index = {}
         entity_count = 0
@@ -60,7 +60,7 @@ def one_hot_encode(path):
         return heads, relations, tails
 
 
-test = "data/WK3l-15k/en_de/test.csv"
-dataset = tf.data.Dataset.from_tensor_slices(one_hot_encode(test))
-for data in dataset:
-    print(data)
+# test = "data/WK3l-15k/en_de/test.csv"
+# dataset = tf.data.Dataset.from_tensor_slices(one_hot_encode(test)).batch(1)
+# for data in dataset:
+#     print(data)
