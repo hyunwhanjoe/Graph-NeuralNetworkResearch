@@ -1,60 +1,75 @@
 import time
 import tensorflow as tf
 
-from MTransE.Encoding import encode
 from tensorflow.keras import Model
 from tensorflow.keras import layers
 
+from MTransE.TransEHelper import TransEHelper
+
 
 class TransEmbedding(Model):
-    def __init__(self, index_range, dimensions):
+    def __init__(self, entity_count, dimensions):
         super(TransEmbedding, self).__init__()
         self.rembedding = None
         self.eembedding = None
-        self.index_range = index_range
+        self.entity_count = entity_count
         self.dimensions = dimensions
 
     def build(self, input_shape):
-        self.rembedding = layers.Embedding(self.index_range, self.dimensions)
-        self.eembedding = layers.Embedding(self.index_range, self.dimensions)
+        self.rembedding = layers.Embedding(self.entity_count, self.dimensions)
+        self.eembedding = layers.Embedding(self.entity_count, self.dimensions)
 
     def call(self, inputs, **kwargs):
-        h = tf.reshape(inputs[0], [-1])
-        r = tf.reshape(inputs[1], [-1])
-        t = tf.reshape(inputs[2], [-1])
+        # h = tf.reshape(inputs[0], [-1])  # make 1-d
+        # r = tf.reshape(inputs[1], [-1])
+        # t = tf.reshape(inputs[2], [-1])
+        h = inputs[0]
+        r = inputs[1]
+        t = inputs[2]
         return self.eembedding(h), self.rembedding(r), self.eembedding(t)
 
 
 def main():
-    t0 = time.time()
     print(tf.__version__)
-    # tf.debugging.set_log_device_placement(True)
+    t0 = time.time()
     path = "data/WK3l-15k/en_de/P_en_v6_training.csv"
     # path = "data/WK3l-15k/en_de/test.csv"
-    ds_train = tf.data.Dataset.from_tensor_slices(encode(path, "integer")).shuffle(1024).batch(16384)
-    # transe_model = TransEmbedding(9, 5)
-    transe_model = TransEmbedding(15108, 75)
-    optimizer = tf.keras.optimizers.Adam()
+    helper = TransEHelper()
+    helper.generate_vocab(path)
+    numpy = helper.encode_vocab(path)
+    # warnings for batch sizes higher than 16,384
+    ds_train = tf.data.Dataset.from_tensor_slices(numpy).shuffle(1024).batch(8192)
+    ds_train = ds_train.prefetch(tf.data.experimental.AUTOTUNE)
+    model = TransEmbedding(helper.get_entity_count(), 75)
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
 
     @tf.function
     def train(inputs, loss_state):
         with tf.GradientTape() as tape:
-            inputs = (inputs[:, 0], inputs[:, 1], inputs[:, 2])
-            h, r, t = transe_model(inputs)
-            h /= tf.norm(h)
-            t /= tf.norm(t)
-            loss = tf.norm(h + r - t)
-            grads = tape.gradient(loss, transe_model.trainable_variables)
-            optimizer.apply_gradients(zip(grads, transe_model.trainable_variables))
+            inputs = (inputs[:, 0], inputs[:, 1], inputs[:, 2])  # input as tuple
+            h, r, t = model(inputs)
+            h = tf.math.l2_normalize(h, axis=1)
+            t = tf.math.l2_normalize(t, axis=1)
+            loss = tf.norm(h + r - t, axis=1)
+            grads = tape.gradient(loss, model.trainable_variables)
+            optimizer.apply_gradients(zip(grads, model.trainable_variables))
             loss_state.update_state(loss)
 
-    for epoch in range(1, 15):
+    checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
+    manager = tf.train.CheckpointManager(
+        checkpoint, directory="models/en_de/400", max_to_keep=5)
+    checkpoint.restore(manager.latest_checkpoint)
+    for epoch in range(1, 400):
         epoch_loss_total = tf.keras.metrics.Sum()
         for datum in iter(ds_train):
             train(datum, epoch_loss_total)
-        print("Epoch %d loss %.3f" % (epoch, epoch_loss_total.result()))
-        print("Time used ", time.time() - t0)
+        print("%d\t%.3f" % (epoch, epoch_loss_total.result()))
+        if epoch_loss_total.result() < 50:
+            break
+    manager.save()
 
 
 if __name__ == "__main__":
+    t0 = time.time()
     main()
+    print("Time used ", time.time() - t0)
