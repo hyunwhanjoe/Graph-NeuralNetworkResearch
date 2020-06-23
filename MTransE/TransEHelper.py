@@ -8,9 +8,13 @@ class TransEHelper(object):
         self.relation_id = None
         self.id_relation = None
         self.entity_count = None
+        self.missed_count = None
 
     def get_entity_count(self):
         return self.entity_count
+
+    def get_missed_count(self):
+        return self.missed_count
 
     def decode_entity(self, number):
         return self.id_entity[number]
@@ -56,7 +60,7 @@ class TransEHelper(object):
     def encode_vocab(self, file_dir, delimiter='@@@', line_end='\n'):
         line_num = 0
         current_line = 0
-        missed_triple = 0
+        self.missed_count = 0
         with open(file_dir, "r", encoding="utf8") as file:
             # get line count
             for line in file:
@@ -70,7 +74,7 @@ class TransEHelper(object):
 
                 h, r, t = self.entity_id.get(triple[0]), self.relation_id.get(triple[1]), self.entity_id.get(triple[2])
                 if h is None or r is None or t is None:
-                    missed_triple += 1
+                    self.missed_count += 1
                 else:
                     triples[current_line, 0] = h
                     triples[current_line, 1] = r
@@ -78,7 +82,7 @@ class TransEHelper(object):
 
                 current_line += 1
 
-            print("missed triples:", missed_triple)
+            print("missed triples:", self.missed_count)
             return triples
 
 
