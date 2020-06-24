@@ -62,37 +62,38 @@ class TransEHelper(object):
         current_line = 0
         self.missed_count = 0
         with open(file_dir, "r", encoding="utf8") as file:
-            # get line count
-            for line in file:
-                line_num += 1
-            print("line count", line_num)
-            file.seek(0)
-
-            triples = np.zeros((line_num, 3))
+            # get matched line count
             for line in file:
                 triple = line.rstrip(line_end).split(delimiter)
-
                 h, r, t = self.entity_id.get(triple[0]), self.relation_id.get(triple[1]), self.entity_id.get(triple[2])
                 if h is None or r is None or t is None:
                     self.missed_count += 1
                 else:
+                    line_num += 1
+            print("line count", line_num)
+            print("missed triples:", self.missed_count)
+            file.seek(0)
+
+            triples = np.empty((line_num, 3))
+            for line in file:
+                triple = line.rstrip(line_end).split(delimiter)
+
+                h, r, t = self.entity_id.get(triple[0]), self.relation_id.get(triple[1]), self.entity_id.get(triple[2])
+                if not(h is None or r is None or t is None):
                     triples[current_line, 0] = h
                     triples[current_line, 1] = r
                     triples[current_line, 2] = t
+                    current_line += 1
 
-                current_line += 1
-
-            print("missed triples:", self.missed_count)
             return triples
 
 
 def main():
+    training_path = "data/WK3l-15k/en_de/P_en_v6_training.csv"
+    test_path = "data/WK3l-15k/en_de/sample_test.csv"
     helper = TransEHelper()
-    path = "data/WK3l-15k/en_de/test.csv"
-    helper.generate_vocab(path)
-    print(helper.entity_id)
-    print(helper.relation_id)
-    print(helper.encode_vocab(path))
+    helper.generate_vocab(training_path)
+    numpy = helper.encode_vocab(test_path)
 
 
 if __name__ == "__main__":
