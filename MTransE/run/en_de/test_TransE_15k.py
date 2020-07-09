@@ -1,4 +1,5 @@
 """
+Adopted from
 https://github.com/muhaochen/MTransE/blob/master/run/en_de/test_MMTransE_lan_mapping_15k_fk.py
 """
 import time
@@ -28,17 +29,20 @@ def test(model, helper, ds_test):
     entity_count = helper.get_entity_count()
     indexes = tf.convert_to_tensor(np.arange(entity_count))
     entity_embeddings, p, o = model((indexes, indexes, indexes))
+    entity_embeddings = tf.math.l2_normalize(entity_embeddings, axis=1)
 
     top_k = 10
     past_num = 0
-    score = []  # check this np array
+    score = []
 
     for inputs in ds_test:
         inputs = (inputs[:, 0], inputs[:, 1], inputs[:, 2])
 
         h, r, t = model(inputs)
+        h = tf.math.l2_normalize(h)
         h_plus_r = h + r
 
+        # tf.reduce_sum((pos_h_e + pos_r_e - pos_t_e) ** 2, 1, keep_dims = True)
         # kNN
         distance = tf.reduce_sum(tf.pow((h_plus_r - entity_embeddings), 2.0), -1)
         sorted_distances = tf.argsort(distance, axis=-1, direction='ASCENDING')
@@ -59,28 +63,31 @@ def test(model, helper, ds_test):
 
         modify_score(score, past_num, tmp_score)
 
-        # if past_num % 10 == 0:
-        #     print(past_num, helper.decode_entity(head_index),
-        #           helper.decode_relation(inputs[1].numpy()[0]),
-        #           helper.decode_entity(inputs[2].numpy()[0]))
-        #     for entity_index in cand:
-        #         print(helper.decode_entity(entity_index), entity_index)
-        #     print(score)
-        #     print("Time used ", time.time() - time0, "\n")
+        if past_num % 100 == 0:
+            print(past_num, helper.decode_entity(head_index),
+                  helper.decode_relation(inputs[1].numpy()[0]),
+                  helper.decode_entity(inputs[2].numpy()[0]))
+            for entity_index in cand:
+                print(helper.decode_entity(entity_index), entity_index)
+            print("score:", score)
+            print("Time used ", time.time() - time0, "\n")
 
         past_num += 1
 
 # account for missed triples
+    print("Missed triple:", helper.get_missed_count())
+    print("Pre-missed score:", score)
+    tmp_score = np.zeros(top_k)
     for i in range(helper.get_missed_count()):
-        tmp_score = np.zeros(top_k)
         modify_score(score, past_num, tmp_score)
         past_num += 1
+    print("score:", score)
 
 
 def main():
     training_path = "../../data/WK3l-15k/en_de/P_en_v6_training.csv"
-    test_path = "../../data/WK3l-15k/en_de/sample_test.csv"
-    # test_path = "../../data/WK3l-15k/en_de/P_en_v6_test.csv"
+    # test_path = "../../data/WK3l-15k/en_de/sample_test.csv"/
+    test_path = "../../data/WK3l-15k/en_de/P_en_v6_test.csv"
     helper = TransEHelper()
     helper.generate_vocab(training_path)
     numpy = helper.encode_vocab(test_path)
@@ -88,10 +95,11 @@ def main():
     ds_test = ds_test.prefetch(tf.data.experimental.AUTOTUNE)
 
     model = TransEmbedding(helper.get_entity_count(), 75)
-    optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.1)
+    # match optimizer and model
     checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
     manager = tf.train.CheckpointManager(
-        checkpoint, directory="../../models/en_de/400", max_to_keep=5)
+        checkpoint, directory="../../models/en_de", max_to_keep=5)
     checkpoint.restore(manager.latest_checkpoint)
 
     test(model, helper, ds_test)
