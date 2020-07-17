@@ -1,13 +1,14 @@
 import time
 import tensorflow as tf
 
-from tensorflow.keras import Model
 from tensorflow.keras import layers
+from tensorflow_core.python.keras.layers import Embedding
 
 from MTransE.TransEHelper import TransEHelper
+from MTransE.TransE_Layers import RelationLayer, EntityLayer
 
 
-class TransEmbedding(Model):
+class TransEmbedding(tf.keras.Model):
     def __init__(self, entity_count, dimensions):
         super(TransEmbedding, self).__init__()
         self.rembedding = None
@@ -16,8 +17,8 @@ class TransEmbedding(Model):
         self.dimensions = dimensions
 
     def build(self, input_shape):
-        self.rembedding = layers.Embedding(self.entity_count, self.dimensions)
-        self.eembedding = layers.Embedding(self.entity_count, self.dimensions)
+        self.rembedding = RelationLayer(self.entity_count, self.dimensions)
+        self.eembedding = Embedding(self.entity_count, self.dimensions)
 
     def call(self, inputs, **kwargs):
         # h = tf.reshape(inputs[0], [-1])  # make 1-d
@@ -30,8 +31,8 @@ class TransEmbedding(Model):
 
 
 def main():
+    # tf.keras.backend.set_floatx('float64')
     print(tf.__version__)
-    t0 = time.time()
     path = "data/WK3l-15k/en_de/P_en_v6_training.csv"
     # path = "data/WK3l-15k/en_de/test.csv"
     helper = TransEHelper()
@@ -41,13 +42,14 @@ def main():
     ds_train = tf.data.Dataset.from_tensor_slices(numpy).shuffle(1024).batch(8192)
     ds_train = ds_train.prefetch(tf.data.experimental.AUTOTUNE)
     model = TransEmbedding(helper.get_entity_count(), 75)
-    optimizer = tf.keras.optimizers.Adam(learning_rate=0.01)
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.1)
 
     @tf.function
     def train(inputs, loss_state):
         with tf.GradientTape() as tape:
             inputs = (inputs[:, 0], inputs[:, 1], inputs[:, 2])  # input as tuple
             h, r, t = model(inputs)
+            # loss = tf.reduce_sum(tf.pow((h + r - t), 2.0), -1)
             h = tf.math.l2_normalize(h, axis=1)
             t = tf.math.l2_normalize(t, axis=1)
             loss = tf.norm(h + r - t, axis=1)
@@ -57,15 +59,17 @@ def main():
 
     checkpoint = tf.train.Checkpoint(optimizer=optimizer, model=model)
     manager = tf.train.CheckpointManager(
-        checkpoint, directory="models/en_de/400", max_to_keep=5)
+        checkpoint, directory="models/en_de", max_to_keep=5)
     checkpoint.restore(manager.latest_checkpoint)
-    for epoch in range(1, 400):
+
+    for epoch in range(1, 401):
         epoch_loss_total = tf.keras.metrics.Sum()
         for datum in iter(ds_train):
             train(datum, epoch_loss_total)
         print("%d\t%.3f" % (epoch, epoch_loss_total.result()))
-        if epoch_loss_total.result() < 50:
+        if epoch_loss_total.result() < 200:
             break
+
     manager.save()
 
 
