@@ -1,3 +1,4 @@
+# based on https://github.com/muhaochen/MTransE/blob/master/run/en_de/test_MMTransE_lan_mapping_15k_fk.py
 import sys
 import time
 import numpy as np
@@ -25,6 +26,7 @@ past_num = 0
 missing = 0
 score = []
 
+# need multiprocessing
 for line in open(fmap):
     line = line.rstrip('\n').split('@@@')
     if len(line) != 3:
